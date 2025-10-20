@@ -1,19 +1,30 @@
+#pragma once
 #include <Arduino.h>
 #include <WebSocketsClient.h>
 #include "freertos/queue.h"
+#include "esp_heap_caps.h"
+#include "esp_spi_flash.h"
+#include "esp_system.h"
 
 extern QueueHandle_t mic_to_server;
-extern QueueHandle_t server_to_speaker;
+extern QueueHandle_t server_to_spk;
 extern WebSocketsClient ws;
+extern volatile bool mic_enabled;
+extern volatile bool spk_enabled;
+extern volatile bool pcm_sending;
+extern volatile bool pcm_receiving;
+extern volatile int chunks;
 
-extern volatile bool g_send_pcm_enabled;
-extern volatile bool g_mic_enabled;
-extern volatile bool enabled;
+typedef struct
+{
+    int16_t *pcm;
+    size_t bytes;
+} PcmChunk;
 
 #define CLIENT_ID "c7b12d5f-8a3e-4bc1-ae3d-9f6a1200a52b"
 
 // SERVER CONFIG
-#define IP_HOST "192.168.1.149"
+#define IP_HOST "192.168.1.169"
 #define PORT_HOST 8080
 #define API_AUDIO_UPLOAD "/audio_stream"
 #define API_STREAM_REPLY "/stream_reply"
@@ -23,7 +34,6 @@ extern volatile bool enabled;
 #define I2S_SAMPLE_RATE 16000
 #define I2S_BUFFER_LEN 1024
 #define SILENCE_THRESHOLD 300
-#define SILENCE_BLOCK_LIMIT 32
 
 #define I2S_WS 4
 #define I2S_SCK 5
@@ -46,3 +56,7 @@ extern volatile bool enabled;
 // PSRAM / BUFFER CONFIG
 #define USE_PSRAM true
 #define MAX_AUDIO_BUFFER 8192
+
+// LED
+#define LED_PIN 48
+#define LED_COUNT 1

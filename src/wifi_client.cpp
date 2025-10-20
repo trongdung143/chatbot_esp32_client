@@ -6,21 +6,20 @@
 
 void wifi_connect()
 {
-    tft.fillScreen(GC9A01A_BLACK);
-    display_show_text("WiFi Setup Mode", 30, 80, GC9A01A_YELLOW, GC9A01A_BLACK);
+    display_update_line_centered(4, "WiFi Setup Mode", GC9A01A_YELLOW, GC9A01A_BLACK, GC9A01A_WHITE);
 
     WiFiManager wifiManager;
-    bool connected = wifiManager.autoConnect("chatbot-esp32", "12345678");
+    bool connected = wifiManager.autoConnect("chatbot_client", "12345678");
 
     if (!connected)
     {
-        display_show_text("No Connection!", 40, 120, GC9A01A_RED, GC9A01A_BLACK);
+        display_update_line_centered(4, "No Connection!", GC9A01A_RED, GC9A01A_BLACK, GC9A01A_WHITE);
     }
     else
     {
-        display_show_text("Connected!", 40, 120, GC9A01A_GREEN, GC9A01A_BLACK);
+        init_websocket_client();
         String ip = WiFi.localIP().toString();
-        display_show_text("IP: " + ip, 40, 150, GC9A01A_CYAN, GC9A01A_BLACK);
+        display_update_line_centered(4, "Connected", GC9A01A_GREEN, GC9A01A_BLACK, GC9A01A_WHITE);
     }
 }
 
@@ -29,29 +28,46 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
     switch (type)
     {
     case WStype_CONNECTED:
-        display_show_text("WS Connected", 30, 180, GC9A01A_GREEN, GC9A01A_BLACK);
-        g_send_pcm_enabled = true;
-        g_mic_enabled = true;
-        enabled = true;
+        display_update_line_centered(4, "Connected to server", GC9A01A_GREEN, GC9A01A_BLACK, GC9A01A_WHITE);
+        mic_enabled = true;
         break;
 
     case WStype_DISCONNECTED:
-        display_show_text("WS Disconnected", 30, 180, GC9A01A_RED, GC9A01A_BLACK);
+        display_update_line_centered(4, "Disconnected!", GC9A01A_RED, GC9A01A_BLACK, GC9A01A_WHITE);
         break;
 
     case WStype_TEXT:
     {
+
         String msg = String((char *)payload);
-        if (msg == "continue")
+        if (msg == "end_stream_audio")
         {
-            g_send_pcm_enabled = true;
-            g_mic_enabled = true;
-            enabled = true;
-            display_show_text(">> Continue", 30, 200, GC9A01A_GREEN, GC9A01A_BLACK);
+            pcm_receiving = false;
         }
-        else if (msg == "stop")
+        else if (msg.startsWith("start_stream_audio"))
         {
-            display_show_text(">> Stopped", 30, 200, GC9A01A_RED, GC9A01A_BLACK);
+            pcm_receiving = true;
+            chunks = msg.indexOf("chunks=");
+        }
+        break;
+    }
+
+    case WStype_BIN:
+    {
+        if (pcm_receiving)
+        {
+            int16_t *pcm = (int16_t *)heap_caps_malloc(length, MALLOC_CAP_SPIRAM);
+            if (pcm)
+            {
+                memcpy(pcm, payload, length);
+                PcmChunk chunk = {pcm, length};
+                xQueueSend(server_to_spk, &chunk, 0);
+                UBaseType_t count = uxQueueMessagesWaiting(server_to_spk);
+                if (count > chunks && !spk_enabled)
+                {
+                    spk_enabled = true;
+                }
+            }
         }
         break;
     }
@@ -60,7 +76,7 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
     }
 }
 
-void init_websocket_client()
+static void init_websocket_client()
 {
     const char *server = IP_HOST;
     const int port = PORT_HOST;
@@ -70,8 +86,6 @@ void init_websocket_client()
     ws.onEvent(onWsEvent);
     ws.setReconnectInterval(5000);
     ws.enableHeartbeat(15000, 3000, 2);
-
-    display_show_text("WebSocket Init", 30, 80, GC9A01A_YELLOW, GC9A01A_BLACK);
 }
 
 void websocket_loop()
@@ -84,29 +98,32 @@ void send_pcm_task(void *param)
     (void)param;
     while (true)
     {
-        if (!g_send_pcm_enabled)
+        if (!pcm_sending)
         {
-            vTaskDelay(pdMS_TO_TICKS(100));
+            vTaskDelay(pdMS_TO_TICKS(50));
             continue;
         }
-        int16_t *pcm;
-        if (xQueueReceive(mic_to_server, &pcm, portMAX_DELAY) == pdTRUE)
-        {
-            if (ws.isConnected())
-            {
-                ws.sendBIN((uint8_t *)pcm, I2S_BUFFER_LEN * sizeof(int16_t));
-            }
-            free(pcm);
-            vTaskDelay(pdMS_TO_TICKS(1));
-            continue;
-        }
-        ws.sendTXT("end");
-        g_send_pcm_enabled = false;
-    }
-}
 
-void revice_pcm(void *param)
-{
-    (void)param;
-    g_send_pcm_enabled = true;
+        PcmChunk chunk;
+
+        if (xQueueReceive(mic_to_server, &chunk, pdMS_TO_TICKS(2000)) == pdTRUE)
+        {
+            if (chunk.pcm && chunk.bytes > 0 && ws.isConnected())
+            {
+                ws.sendBIN((uint8_t *)chunk.pcm, chunk.bytes);
+            }
+
+            if (chunk.pcm)
+                heap_caps_free(chunk.pcm);
+        }
+        else
+        {
+            ws.sendTXT("end_chat");
+            xQueueReset(mic_to_server);
+            pcm_sending = false;
+            mic_enabled = false;
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
 }
