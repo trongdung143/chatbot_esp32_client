@@ -34,7 +34,7 @@ void spk_task(void *param)
     {
         if (!spk_enabled)
         {
-            vTaskDelay(pdMS_TO_TICKS(20));
+            vTaskDelay(pdMS_TO_TICKS(50));
             continue;
         }
 
@@ -61,7 +61,6 @@ void spk_task(void *param)
 
                     heap_caps_free(buf);
                 }
-
                 heap_caps_free(chunk.pcm);
             }
         }

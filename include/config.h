@@ -24,7 +24,7 @@ typedef struct
 #define CLIENT_ID "c7b12d5f-8a3e-4bc1-ae3d-9f6a1200a52b"
 
 // SERVER CONFIG
-#define IP_HOST "192.168.1.169"
+#define IP_HOST "192.168.1.176"
 #define PORT_HOST 8080
 #define API_AUDIO_UPLOAD "/audio_stream"
 #define API_STREAM_REPLY "/stream_reply"

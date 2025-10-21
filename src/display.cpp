@@ -15,34 +15,6 @@ void display_clear()
     tft.fillScreen(GC9A01A_BLACK);
 }
 
-void display_show_text_in_rect(const String &text, int16_t x, int16_t y, uint16_t color, uint16_t bg, uint16_t border_color)
-{
-    int16_t w = text.length() * 12;
-    int16_t h = 20;
-    tft.fillRect(x - 4, y - 4, w + 8, h + 8, border_color);
-    tft.fillRect(x - 2, y - 2, w + 4, h + 4, bg);
-    tft.setCursor(x, y + 5);
-    tft.setTextColor(color, bg);
-    tft.setTextSize(2);
-    tft.println(text);
-}
-
-void display_clear_rect(int16_t x, int16_t y, int16_t w, int16_t h)
-{
-    tft.fillRect(x, y, w, h, GC9A01A_BLACK);
-}
-
-void display_update_line(uint8_t line, const String &text, uint16_t text_color, uint16_t bg_color, uint16_t border_color)
-{
-    int16_t x = 10;
-    int16_t y = 10 + line * 30;
-    int16_t w = text.length() * 12 + 16;
-    int16_t h = 28;
-
-    display_clear_rect(x - 4, y - 4, w, h);
-    display_show_text_in_rect(text, x, y, text_color, bg_color, border_color);
-}
-
 void display_update_line_centered(uint8_t line, const String &text,
                                   uint16_t text_color, uint16_t bg_color, uint16_t border_color)
 {

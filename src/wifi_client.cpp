@@ -28,7 +28,7 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
     switch (type)
     {
     case WStype_CONNECTED:
-        display_update_line_centered(4, "Connected to server", GC9A01A_GREEN, GC9A01A_BLACK, GC9A01A_WHITE);
+        display_update_line_centered(3, "Listening...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
         mic_enabled = true;
         break;
 
@@ -42,10 +42,12 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
         String msg = String((char *)payload);
         if (msg == "end_stream_audio")
         {
+
             pcm_receiving = false;
         }
         else if (msg.startsWith("start_stream_audio"))
         {
+            display_update_line_centered(3, "Speaking...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
             pcm_receiving = true;
             chunks = msg.indexOf("chunks=");
         }
@@ -118,6 +120,7 @@ void send_pcm_task(void *param)
         }
         else
         {
+            display_update_line_centered(3, "Thinking...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
             ws.sendTXT("end_chat");
             xQueueReset(mic_to_server);
             pcm_sending = false;

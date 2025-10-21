@@ -21,22 +21,13 @@ unsigned long last_update = 0;
 void setup()
 {
   Serial.begin(115200);
-  delay(1000);
-
-  wifi_connect();
-  delay(500);
-
   display_init();
   delay(500);
 
+  wifi_connect();
   led_init();
-  delay(500);
-
   mic_init();
-  delay(500);
-
   spk_init();
-  delay(500);
 
   mic_to_server = xQueueCreate(20, sizeof(PcmChunk));
   server_to_spk = xQueueCreate(100, sizeof(PcmChunk));
@@ -44,9 +35,7 @@ void setup()
   display_clear();
 
   xTaskCreatePinnedToCore(mic_task, "mic_task", 1024 * 20, NULL, 1, NULL, 0);
-  delay(10);
   xTaskCreatePinnedToCore(send_pcm_task, "send_pcm_task", 1024 * 12, NULL, 1, NULL, 1);
-  delay(10);
   xTaskCreatePinnedToCore(spk_task, "spk_task", 1024 * 12, NULL, 1, NULL, 0);
 }
 
