@@ -24,7 +24,7 @@ typedef struct
 #define CLIENT_ID "c7b12d5f-8a3e-4bc1-ae3d-9f6a1200a52b"
 
 // SERVER CONFIG
-#define IP_HOST "192.168.1.176"
+#define IP_HOST "192.168.1.100"
 #define PORT_HOST 8080
 #define API_AUDIO_UPLOAD "/audio_stream"
 #define API_STREAM_REPLY "/stream_reply"
@@ -33,7 +33,7 @@ typedef struct
 #define I2S_MIC_PORT I2S_NUM_0
 #define I2S_SAMPLE_RATE 16000
 #define I2S_BUFFER_LEN 1024
-#define SILENCE_THRESHOLD 300
+#define SILENCE_THRESHOLD 500
 
 #define I2S_WS 4
 #define I2S_SCK 5

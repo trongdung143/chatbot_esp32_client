@@ -1,4 +1,5 @@
 #include "spk.h"
+#include "display.h"
 
 void spk_init()
 {
@@ -38,7 +39,9 @@ void spk_task(void *param)
             continue;
         }
 
-        if (xQueueReceive(server_to_spk, &chunk, pdMS_TO_TICKS(300)) == pdTRUE)
+        mic_enabled = false;
+        pcm_sending = false;
+        if (xQueueReceive(server_to_spk, &chunk, pdMS_TO_TICKS(2000)) == pdTRUE)
         {
             if (chunk.pcm && chunk.bytes > 0)
             {
@@ -69,8 +72,9 @@ void spk_task(void *param)
             if (uxQueueMessagesWaiting(server_to_spk) == 0)
             {
                 spk_enabled = false;
-                mic_enabled = true;
                 xQueueReset(server_to_spk);
+                mic_enabled = true;
+                display_update_line_centered(3, "Listening...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
             }
         }
 

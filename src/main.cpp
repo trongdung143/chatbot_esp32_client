@@ -30,7 +30,7 @@ void setup()
   spk_init();
 
   mic_to_server = xQueueCreate(20, sizeof(PcmChunk));
-  server_to_spk = xQueueCreate(100, sizeof(PcmChunk));
+  server_to_spk = xQueueCreate(1000, sizeof(PcmChunk));
 
   display_clear();
 

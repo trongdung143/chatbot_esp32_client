@@ -1,8 +1,5 @@
-#include <WiFi.h>
-#include <WiFiManager.h>
 #include "display.h"
 #include "wifi_client.h"
-#include "freertos/queue.h"
 
 void wifi_connect()
 {
@@ -28,6 +25,7 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
     switch (type)
     {
     case WStype_CONNECTED:
+        display_clear();
         display_update_line_centered(3, "Listening...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
         mic_enabled = true;
         break;
@@ -42,14 +40,13 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
         String msg = String((char *)payload);
         if (msg == "end_stream_audio")
         {
-
             pcm_receiving = false;
         }
         else if (msg.startsWith("start_stream_audio"))
         {
-            display_update_line_centered(3, "Speaking...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
             pcm_receiving = true;
-            chunks = msg.indexOf("chunks=");
+            uint16_t idx = msg.indexOf("chunks=");
+            chunks = msg.substring(idx + 7).toInt();
         }
         break;
     }
@@ -63,10 +60,11 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
             {
                 memcpy(pcm, payload, length);
                 PcmChunk chunk = {pcm, length};
-                xQueueSend(server_to_spk, &chunk, 0);
+                xQueueSend(server_to_spk, &chunk, 50);
                 UBaseType_t count = uxQueueMessagesWaiting(server_to_spk);
-                if (count > chunks && !spk_enabled)
+                if (count >= chunks / 2 && !spk_enabled)
                 {
+                    display_update_line_centered(3, "Speaking...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
                     spk_enabled = true;
                 }
             }

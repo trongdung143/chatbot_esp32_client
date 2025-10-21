@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include <WiFi.h>
+#include <WiFiManager.h>
 
 void wifi_connect();
 static void onWsEvent(WStype_t type, uint8_t *payload, size_t length);

@@ -45,7 +45,8 @@ void mic_task(void *param)
         int32_t i2s_read_buff[I2S_BUFFER_LEN];
         int16_t i2s_buf[I2S_BUFFER_LEN];
         size_t bytes_read;
-
+        spk_enabled = false;
+        pcm_receiving = false;
         i2s_read(I2S_MIC_PORT, i2s_read_buff, sizeof(i2s_read_buff), &bytes_read, portMAX_DELAY);
 
         for (int i = 0; i < bytes_read / 4; i++)
@@ -60,7 +61,7 @@ void mic_task(void *param)
                 int16_t *pcm = (int16_t *)heap_caps_malloc(bytes_read / 2, MALLOC_CAP_SPIRAM);
                 memcpy(pcm, i2s_buf, bytes_read / 2);
                 PcmChunk chunk = {pcm, bytes_read / 2};
-                xQueueSend(mic_to_server, &chunk, 0);
+                xQueueSend(mic_to_server, &chunk, 50);
                 if (queue_size > 3 && !pcm_sending)
                 {
                     ws.sendTXT("start_chat|" + String(CLIENT_ID));
