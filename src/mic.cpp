@@ -12,9 +12,9 @@ void mic_init()
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = 0,
-        .dma_buf_count = 4,
+        .dma_buf_count = 8,
         .dma_buf_len = I2S_BUFFER_LEN,
-        .use_apll = false,
+        .use_apll = true,
         .tx_desc_auto_clear = false,
         .fixed_mclk = 0};
 
@@ -62,7 +62,7 @@ void mic_task(void *param)
                 memcpy(pcm, i2s_buf, bytes_read / 2);
                 PcmChunk chunk = {pcm, bytes_read / 2};
                 xQueueSend(mic_to_server, &chunk, 50);
-                if (queue_size > 3 && !pcm_sending)
+                if (queue_size >= 6 && !pcm_sending)
                 {
                     ws.sendTXT("start_chat|" + String(CLIENT_ID));
                     pcm_sending = true;

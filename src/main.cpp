@@ -15,6 +15,7 @@ volatile bool pcm_sending = false;
 volatile bool spk_enabled = false;
 volatile bool pcm_receiving = false;
 volatile int chunks = 0;
+volatile State state = State::NONE;
 
 unsigned long last_update = 0;
 
@@ -31,8 +32,6 @@ void setup()
 
   mic_to_server = xQueueCreate(20, sizeof(PcmChunk));
   server_to_spk = xQueueCreate(1000, sizeof(PcmChunk));
-
-  display_clear();
 
   xTaskCreatePinnedToCore(mic_task, "mic_task", 1024 * 20, NULL, 1, NULL, 0);
   xTaskCreatePinnedToCore(send_pcm_task, "send_pcm_task", 1024 * 12, NULL, 1, NULL, 1);

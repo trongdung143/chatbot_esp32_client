@@ -15,11 +15,21 @@ extern volatile bool pcm_sending;
 extern volatile bool pcm_receiving;
 extern volatile int chunks;
 
-typedef struct
+struct PcmChunk
 {
     int16_t *pcm;
     size_t bytes;
-} PcmChunk;
+};
+
+enum State
+{
+    THINK,
+    SPEAK,
+    LISTEN,
+    NONE
+};
+
+extern volatile State state;
 
 #define CLIENT_ID "c7b12d5f-8a3e-4bc1-ae3d-9f6a1200a52b"
 

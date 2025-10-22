@@ -3,20 +3,20 @@
 
 void wifi_connect()
 {
-    display_update_line_centered(4, "WiFi Setup Mode", GC9A01A_YELLOW, GC9A01A_BLACK, GC9A01A_WHITE);
+    display_update_line_centered(4, "wiFi setup mode", GC9A01A_YELLOW, GC9A01A_BLACK, GC9A01A_WHITE);
 
     WiFiManager wifiManager;
     bool connected = wifiManager.autoConnect("chatbot_client", "12345678");
 
     if (!connected)
     {
-        display_update_line_centered(4, "No Connection!", GC9A01A_RED, GC9A01A_BLACK, GC9A01A_WHITE);
+        display_update_line_centered(4, "no connection!", GC9A01A_RED, GC9A01A_BLACK, GC9A01A_WHITE);
     }
     else
     {
         init_websocket_client();
         String ip = WiFi.localIP().toString();
-        display_update_line_centered(4, "Connected", GC9A01A_GREEN, GC9A01A_BLACK, GC9A01A_WHITE);
+        display_update_line_centered(4, "donnected", GC9A01A_GREEN, GC9A01A_BLACK, GC9A01A_WHITE);
     }
 }
 
@@ -26,12 +26,12 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
     {
     case WStype_CONNECTED:
         display_clear();
-        display_update_line_centered(3, "Listening...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
+        diplay_update_state(State::LISTEN);
         mic_enabled = true;
         break;
 
     case WStype_DISCONNECTED:
-        display_update_line_centered(4, "Disconnected!", GC9A01A_RED, GC9A01A_BLACK, GC9A01A_WHITE);
+        display_update_line_centered(4, "disconnected", GC9A01A_RED, GC9A01A_BLACK, GC9A01A_WHITE);
         break;
 
     case WStype_TEXT:
@@ -62,9 +62,9 @@ static void onWsEvent(WStype_t type, uint8_t *payload, size_t length)
                 PcmChunk chunk = {pcm, length};
                 xQueueSend(server_to_spk, &chunk, 50);
                 UBaseType_t count = uxQueueMessagesWaiting(server_to_spk);
-                if (count >= chunks / 2 && !spk_enabled)
+                if (count >= 8 && !spk_enabled)
                 {
-                    display_update_line_centered(3, "Speaking...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
+                    diplay_update_state(State::SPEAK);
                     spk_enabled = true;
                 }
             }
@@ -118,9 +118,8 @@ void send_pcm_task(void *param)
         }
         else
         {
-            display_update_line_centered(3, "Thinking...", GC9A01A_ORANGE, GC9A01A_BLACK, GC9A01A_WHITE);
             ws.sendTXT("end_chat");
-            xQueueReset(mic_to_server);
+            diplay_update_state(State::THINK);
             pcm_sending = false;
             mic_enabled = false;
         }
